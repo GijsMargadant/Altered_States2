@@ -29,36 +29,50 @@ class Matrix:
         found_states = []
 
         while stack:
-            addres = stack.pop()
-            if len(addres) > self.max_length:
+            address = stack.pop()
+            if len(address) > self.max_length:
                 continue
             
-            name = self.__convert_addres_to_string(addres, flat_mtrx)
-            if name in self.possible_states:
-                found_states.append({"name": name, "addres": addres})
+            name = self.__convert_address_to_string(address, flat_mtrx)
 
-            self.add_new_addreses_to_stack(stack, addres)
+            if not self.__is_name_possible(name):
+                continue
+
+            if name in self.possible_states:
+                found_states.append({"name": name, "address": address})
+
+            stack.extend(self.get_new_addresses(address))
+            
 
         # print(f'Found the following states:\n{found_states}')
         return set(map(lambda s: s["name"], found_states))
+
+    def __is_name_possible(self, name):
+        return len(list(filter(lambda s: s.startswith(name), self.possible_states))) > 0
     
     def compute_score(self, states):
         return functools.reduce(operator.add, map(lambda s: self.states_population[s], states))
 
-    def add_new_addreses_to_stack(self, stack, addres):
-        m = math.floor(addres[-1] / self.mtrx.shape[0])
-        n = addres[-1] % self.mtrx.shape[0]
+    def get_new_addresses(self, address):
+        result = []
+        m, n = self.get_2d_pos_of_last_index(address)
         for i in range(max(0, m - 1), min(m + 2, self.mtrx.shape[0])):
             for j in range(max(0, n - 1), min(n + 2, self.mtrx.shape[0])):
                 if i == m and j == n:
                     continue
-                new_addres = addres.copy()
-                new_addres.append(i * self.mtrx.shape[0] + j)
-                stack.append(new_addres)
+                new_address = address.copy()
+                new_address.append(i * self.mtrx.shape[0] + j)
+                result.append(new_address)
+        return result
+
+    def get_2d_pos_of_last_index(self, address):
+        m = math.floor(address[-1] / self.mtrx.shape[0])
+        n = address[-1] % self.mtrx.shape[0]
+        return m,n
                     
 
-    def __convert_addres_to_string(self, addres: list[int], flat_mtrx: np.array):
-        chars = map(lambda i: flat_mtrx[i], addres)
+    def __convert_address_to_string(self, address: list[int], flat_mtrx: np.array):
+        chars = map(lambda i: flat_mtrx[i], address)
         return functools.reduce(operator.add, chars)
 
 
