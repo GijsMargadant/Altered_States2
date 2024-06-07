@@ -3,6 +3,7 @@ from collections import Counter
 import math
 import functools
 import operator
+import time
 
 
 class Matrix:
@@ -22,6 +23,8 @@ class Matrix:
     def is_valid_input(self, str):
         return math.floor(math.sqrt(len(str))) == math.ceil(math.sqrt(len(str)))
 
+    def compute_score(self, states):
+        return functools.reduce(operator.add, map(lambda s: self.states_population[s], states))
 
     def find_unique_states(self):
         flat_mtrx = self.mtrx.flatten()
@@ -41,7 +44,7 @@ class Matrix:
             if name in self.possible_states:
                 found_states.append({"name": name, "address": address})
 
-            stack.extend(self.get_new_addresses(address))
+            stack.extend(self.__get_new_addresses(address))
             
 
         # print(f'Found the following states:\n{found_states}')
@@ -49,11 +52,8 @@ class Matrix:
 
     def __is_name_possible(self, name):
         return len(list(filter(lambda s: s.startswith(name), self.possible_states))) > 0
-    
-    def compute_score(self, states):
-        return functools.reduce(operator.add, map(lambda s: self.states_population[s], states))
 
-    def get_new_addresses(self, address):
+    def __get_new_addresses(self, address):
         result = []
         m, n = self.get_2d_pos_of_last_index(address)
         for i in range(max(0, m - 1), min(m + 2, self.mtrx.shape[0])):
@@ -163,7 +163,12 @@ input_str = 'codhclutaniorkssnabodietl'
 # state_populations = {"ab" : 2, "cd" : 3}
 # input_str = 'axxb'
 matrix = Matrix(input_str, state_populations)
-states = matrix.find_unique_states()
+
+t0 = time.time()
+for i in range(0, 1):
+    states = matrix.find_unique_states()
+t1 = time.time()
 score = matrix.compute_score(states)
 print(f'States found: {states}')
 print(f'Score = {score}')
+print(f'Took {t1 - t0} s')
