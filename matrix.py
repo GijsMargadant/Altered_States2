@@ -17,7 +17,7 @@ class Matrix:
         self.possible_states = self.__possible_states_in_grid(str)
         self.max_length = max(map(lambda s: len(s), self.possible_states), default=0)
 
-        print(f'Possible states:{self.possible_states}\nMatrix:\n{self.mtrx}')
+        # print(f'Possible states:{self.possible_states}\nMatrix:\n{self.mtrx}')
 
 
     def is_valid_input(self, str):
@@ -41,17 +41,36 @@ class Matrix:
             if not self.__is_name_possible(name):
                 continue
 
-            if name in self.possible_states:
-                found_states.append({"name": name, "address": address})
+            state = self.__get_matching_state(name)
+            if state:
+                found_states.append({"name": state, "address": address})
 
             stack.extend(self.__get_new_addresses(address))
             
-
         # print(f'Found the following states:\n{found_states}')
         return set(map(lambda s: s["name"], found_states))
 
+
     def __is_name_possible(self, name):
-        return len(list(filter(lambda s: s.startswith(name), self.possible_states))) > 0
+        # return len(list(filter(lambda s: s.startswith(name), self.possible_states))) > 0
+        return len(list(filter(lambda s: self.__is_similar(name, s[0:len(name)]), self.possible_states))) > 0
+
+    
+    
+    def __get_matching_state(self, name):
+        state = list(filter(lambda s: self.__is_similar(name, s), self.possible_states))
+        if len(state) > 0:
+            return state.pop()
+        else:
+            return None
+
+
+    def __is_similar(self, str1, str2):
+        try:
+            zip_list = zip([x for x in str1], [y for y in str2], strict=True)
+            return len(list(filter(lambda p: p[0] != p[1], zip_list))) <= 1
+        except ValueError:
+            return False
 
     def __get_new_addresses(self, address):
         result = []
@@ -64,6 +83,7 @@ class Matrix:
                 new_address.append(i * self.mtrx.shape[0] + j)
                 result.append(new_address)
         return result
+
 
     def get_2d_pos_of_last_index(self, address):
         m = math.floor(address[-1] / self.mtrx.shape[0])
@@ -158,17 +178,17 @@ state_populations = {
     "vermont": 643077,
     "wyoming": 576851
 }
-# input_str = 'alaskxmbxaxxxxxxxxxxxxxxx'
+# # input_str = 'alaskxmbxaxxxxxxxxxxxxxxx'
 input_str = 'codhclutaniorkssnabodietl'
-# state_populations = {"ab" : 2, "cd" : 3}
-# input_str = 'axxb'
+# input_str = 'thoainesl'
+# # state_populations = {"ab" : 2, "cd" : 3}
+# # input_str = 'axxb'
 matrix = Matrix(input_str, state_populations)
 
 t0 = time.time()
 for i in range(0, 1):
     states = matrix.find_unique_states()
 t1 = time.time()
+print(f'States found ({t1 - t0:.3f} s):\n{states}\n')
 score = matrix.compute_score(states)
-print(f'States found: {states}')
-print(f'Score = {score}')
-print(f'Took {t1 - t0} s')
+print(f'Score = {score:,}')
