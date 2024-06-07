@@ -85,6 +85,8 @@ def all_or_all_but_one_letters_in_string(short_string, long_string):
     
     return True
 
+
+#checks the 
 def possible_states_in_grid(grid):
     states = []
     for state in state_populations.keys():
@@ -93,4 +95,90 @@ def possible_states_in_grid(grid):
     return states
 
 
-print(possible_states_in_grid('pennsylvanagfdghbg'))
+def get_total_population(states):
+    sum = 0
+    for state in states:
+        sum += state_populations.get(state)
+
+    return sum
+
+
+def states_in_grid(grid):
+    grid_matrix = string_to_2d_array(grid)
+    for state in possible_states_in_grid(grid):
+        return
+
+# def state_in_grid(grid, state):
+#     i = 0
+#     route = []
+#     for coordinate in get_start_position(grid,list(state)[0]):
+#         print(coordinate)
+#         print(coordinate[0], coordinate[1])
+#         for c in range(1, len(state)):
+#             if king_move(grid, coordinate[0], coordinate[1], list(state)[i]) == False:
+#                 return False
+        
+#             route.append(coordinate)
+#             i += 1
+#             print("list state i:",list(state)[i] )
+#             print(king_move(grid, coordinate[0], coordinate[1], list(state)[i]))
+#             for cord in king_move(grid, coordinate[0], coordinate[1], list(state)[i]):
+                                  
+            
+#             if(coordinate == False):
+#                 return False
+#             if i == len(state)-1:
+#                 return route       
+#     return False    
+
+def get_start_position(grid, target):
+    start_pos = []
+    for x in range(len(grid)):
+        for y in range(len(grid)):
+            if grid[x][y] == target:
+                start_pos.append([x,y])
+    return start_pos
+
+def king_move(grid, x, y, target):
+    moves = []
+    for i in range(x-1,x+2):
+        for j in range(y-1,y+2):
+            if i>= 0 and i<len(grid) and j>=0 and j<len(grid) and (not (i==0 and j ==0)):
+                if grid[i][j] == target:
+                    moves.append([i,j])
+    return moves                
+        
+def recursiontest(grid, state, start_coordinate, i, start_string):
+    print("start string: ", start_string)
+    if start_string == state:
+        return True
+    
+    else:
+        print("target letter:",state[i])
+        print("kingmove, grid, x, y, target", grid, start_coordinate[0], start_coordinate[1], state[i], king_move(grid,start_coordinate[0],start_coordinate[1],state[i]))
+        for cord in king_move(grid, start_coordinate[0], start_coordinate[1], state[i]):
+            start_string = start_string + state[i]
+        
+                
+            print("Kingmove true", king_move(grid, start_coordinate[0], start_coordinate[1], state[i]))
+            i += 1
+            
+            return recursiontest(grid,state,cord,i, start_string)
+
+
+
+def find_all_states(grid):
+    possible_states = possible_states_in_grid(grid)
+    grid = string_to_2d_array(grid)
+    all_states = []
+    for state in possible_states:
+        for coords in get_start_position(grid, state[0]):
+            if recursiontest(grid, state, coords,1, state[0]):
+                all_states.append(state)
+
+    return all_states
+           
+st = 'aaska'
+print(find_all_states('codhclutaniorkssnabodietl'))
+#print("test the recursion:", recursiontest(string_to_2d_array(), 'alaska',[0,0],1, 'a'))
+print(possible_states_in_grid('pennsylvanagdeflkjndfhkjljfdghbg'), get_total_population(possible_states_in_grid('pennsylvanagfdghbg')))
