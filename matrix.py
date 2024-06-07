@@ -8,7 +8,7 @@ import operator
 class Matrix:
 
     def __init__(self, str: str, states_population: dict[str, int]) -> None:
-        if not self.is_valid_method(str):
+        if not self.is_valid_input(str):
             raise ValueError(f'Can not make matrix, string length not perfect square: {len(str)}')
 
         self.states_population = states_population
@@ -19,7 +19,7 @@ class Matrix:
         print(f'Possible states:{self.possible_states}\nMatrix:\n{self.mtrx}')
 
 
-    def is_valid_method(self, str):
+    def is_valid_input(self, str):
         return math.floor(math.sqrt(len(str))) == math.ceil(math.sqrt(len(str)))
 
 
