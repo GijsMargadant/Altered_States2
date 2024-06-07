@@ -47,30 +47,24 @@ class Matrix:
 
             stack.extend(self.__get_new_addresses(address))
             
-        # print(f'Found the following states:\n{found_states}')
         return set(map(lambda s: s["name"], found_states))
 
 
     def __is_name_possible(self, name):
-        # return len(list(filter(lambda s: s.startswith(name), self.possible_states))) > 0
-        return len(list(filter(lambda s: self.__is_similar(name, s[0:len(name)]), self.possible_states))) > 0
-
+        name_length = len(name)
+        return any(self.__is_similar(name, s[:name_length]) for s in self.possible_states)
     
     
     def __get_matching_state(self, name):
-        state = list(filter(lambda s: self.__is_similar(name, s), self.possible_states))
-        if len(state) > 0:
-            return state.pop()
-        else:
-            return None
+        return next((s for s in self.possible_states if self.__is_similar(name, s)), None)
 
 
     def __is_similar(self, str1, str2):
-        try:
-            zip_list = zip([x for x in str1], [y for y in str2], strict=True)
-            return len(list(filter(lambda p: p[0] != p[1], zip_list))) <= 1
-        except ValueError:
+        if len(str1) != len(str2):
             return False
+
+        difference_count = sum(1 for x, y in zip(str1, str2) if x != y)
+        return difference_count <= 1
 
     def __get_new_addresses(self, address):
         result = []
