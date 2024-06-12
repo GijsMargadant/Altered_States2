@@ -1,5 +1,3 @@
-import numpy as np
-from collections import Counter
 import math
 import functools
 import operator
@@ -61,17 +59,21 @@ class Matrix:
                 return True
         return False
 
-
-    def __get_neighbourin_cell_indices(self, idx, str_len) -> list[int]:
-        mtrx_dim = (int) (math.sqrt(str_len))
+    def __get_neighbourin_cell_indices(self, idx, str_len):
+        mtrx_dim = int(str_len ** 0.5)
         result = []
-        m = math.floor(idx / mtrx_dim)
+        m = idx // mtrx_dim
         n = idx % mtrx_dim
-        for i in range(max(0, m - 1), min(m + 2, mtrx_dim)):
-            for j in range(max(0, n - 1), min(n + 2, mtrx_dim)):
-                if i == m and j == n:
-                    continue
-                result.append(i * mtrx_dim + j)
+        m_start = max(0, m - 1)
+        m_end = min(m + 2, mtrx_dim)
+        n_start = max(0, n - 1)
+        n_end = min(n + 2, mtrx_dim)
+        
+        for i in range(m_start, m_end):
+            for j in range(n_start, n_end):
+                if i != m or j != n:
+                    result.append(i * mtrx_dim + j)
+                    
         return result
 
 
@@ -135,7 +137,7 @@ input_str = 'codhclutaniorkssnabodietl'
 matrix = Matrix(input_str, state_populations)
 
 t0 = time.time()
-for i in range(0, 1):
+for i in range(0, 1000):
     matrix.find_all_present_states()
 t1 = time.time()
 print(f'States found ({t1 - t0:.3f} s):\n{matrix.get_states()}\n')
