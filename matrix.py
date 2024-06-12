@@ -12,113 +12,68 @@ class Matrix:
         if not self.is_valid_input(str):
             raise ValueError(f'Can not make matrix, string length not perfect square: {len(str)}')
 
+        self.input = str
         self.states_population = states_population
-        self.mtrx = self.__convert_to_mtrx(str)
-        self.possible_states = self.__possible_states_in_grid(str)
-        self.max_length = max(map(lambda s: len(s), self.possible_states), default=0)
-
-        # print(f'Possible states:{self.possible_states}\nMatrix:\n{self.mtrx}')
-
+        self.solution = None
 
     def is_valid_input(self, str):
         return math.floor(math.sqrt(len(str))) == math.ceil(math.sqrt(len(str)))
 
-    def compute_score(self, states):
-        return functools.reduce(operator.add, map(lambda s: self.states_population[s], states))
-
-    def find_unique_states(self):
-        flat_mtrx = self.mtrx.flatten()
-        stack: list[list[int]] = [[x] for x in range(0, len(flat_mtrx))]
-        found_states = []
-
-        while stack:
-            address = stack.pop()
-            if len(address) > self.max_length:
-                continue
-            
-            name = self.__convert_address_to_string(address, flat_mtrx)
-
-            if not self.__is_name_possible(name):
-                continue
-
-            state = self.__get_matching_state(name)
-            if state:
-                found_states.append({"name": state, "address": address})
-
-            stack.extend(self.__get_new_addresses(address))
-            
-        return set(map(lambda s: s["name"], found_states))
-
-
-    def __is_name_possible(self, name):
-        name_length = len(name)
-        return any(self.__is_similar(name, s[:name_length]) for s in self.possible_states)
+    def get_score(self):
+        return functools.reduce(operator.add, map(lambda s: self.states_population[s], self.solution), 0)
     
+    def get_states(self):
+        return self.solution
     
-    def __get_matching_state(self, name):
-        return next((s for s in self.possible_states if self.__is_similar(name, s)), None)
-
-
-    def __is_similar(self, str1, str2):
-        if len(str1) != len(str2):
+    def find_all_present_states(self, alturations=1):
+        self.solution = []
+        for state in self.__get_possible_states(alturations):
+            if self.__is_state_present(self.input, state, alturations):
+                self.solution.append(state)
+    
+    def __get_possible_states(self, alturations):
+        possible_states = []
+        input_chars= set(self.input)
+        for state in self.states_population.keys():
+            state_chars = set(state)
+            diff = state_chars.union(input_chars)
+            if len(diff) >= len(state) - alturations:
+                possible_states.append(state)
+        return possible_states
+    
+    def __is_state_present(self, input: str, state: str, alterings: int) -> bool:
+        result = False
+        for i in range(0, len(input)):
+            result = result or self.__is_state_present_helper(input, state, i, alterings)
+        return result
+    
+    def __is_state_present_helper(self, input: str, state: str, cur_pos: int, alterings: int) -> bool:
+        if input[cur_pos] != state[0] and alterings == 0:
             return False
+        elif input[cur_pos] != state[0] and alterings > 0:
+            alterings = alterings - 1
+        elif input[cur_pos] == state:
+            return True
+        
+        state = state[1:]
+        for i in self.__get_neighbourin_cell_indices(cur_pos, len(input)):
+            if (self.__is_state_present_helper(input, state, i, alterings)):
+                return True
+        return False
 
-        difference_count = sum(1 for x, y in zip(str1, str2) if x != y)
-        return difference_count <= 1
 
-    def __get_new_addresses(self, address):
+    def __get_neighbourin_cell_indices(self, idx, str_len) -> list[int]:
+        mtrx_dim = (int) (math.sqrt(str_len))
         result = []
-        m, n = self.get_2d_pos_of_last_index(address)
-        for i in range(max(0, m - 1), min(m + 2, self.mtrx.shape[0])):
-            for j in range(max(0, n - 1), min(n + 2, self.mtrx.shape[0])):
+        m = math.floor(idx / mtrx_dim)
+        n = idx % mtrx_dim
+        for i in range(max(0, m - 1), min(m + 2, mtrx_dim)):
+            for j in range(max(0, n - 1), min(n + 2, mtrx_dim)):
                 if i == m and j == n:
                     continue
-                new_address = address.copy()
-                new_address.append(i * self.mtrx.shape[0] + j)
-                result.append(new_address)
+                result.append(i * mtrx_dim + j)
         return result
 
-
-    def get_2d_pos_of_last_index(self, address):
-        m = math.floor(address[-1] / self.mtrx.shape[0])
-        n = address[-1] % self.mtrx.shape[0]
-        return m,n
-                    
-
-    def __convert_address_to_string(self, address: list[int], flat_mtrx: np.array):
-        chars = map(lambda i: flat_mtrx[i], address)
-        return functools.reduce(operator.add, chars)
-
-
-    def __possible_states_in_grid(self, grid) -> list[str]:
-        states = []
-        for state in self.states_population.keys():
-            if(self.__all_or_all_but_one_letters_in_string(state, grid)):
-                states.append(state)
-
-        return states
-    
-
-    def __convert_to_mtrx(self, str) -> np.array:
-        array = np.array(list(str))
-        k = (int) (math.sqrt(len(str)))
-        return array.reshape(-1, k)
-
-
-    def __all_or_all_but_one_letters_in_string(self, short_string, long_string) -> bool:
-        short_counter = Counter(short_string)
-        long_counter = Counter(long_string)
-        
-        missing_count = 0
-        
-        for char, count in short_counter.items():
-            if long_counter[char] < 1: #if not in long string add one to count
-                missing_count += 1
-            if missing_count > 1:
-                return False
-        
-        return True
-    
 
 state_populations = {
     "california": 39538223,
@@ -172,17 +127,16 @@ state_populations = {
     "vermont": 643077,
     "wyoming": 576851
 }
-# # input_str = 'alaskxmbxaxxxxxxxxxxxxxxx'
+# input_str = 'alaskxmbxaxxxxxxxxxxxxxxx'
 input_str = 'codhclutaniorkssnabodietl'
 # input_str = 'thoainesl'
-# # state_populations = {"ab" : 2, "cd" : 3}
-# # input_str = 'axxb'
+# state_populations = {"ab" : 2, "cd" : 3}
+# input_str = 'axxb'
 matrix = Matrix(input_str, state_populations)
 
 t0 = time.time()
 for i in range(0, 1):
-    states = matrix.find_unique_states()
+    matrix.find_all_present_states()
 t1 = time.time()
-print(f'States found ({t1 - t0:.3f} s):\n{states}\n')
-score = matrix.compute_score(states)
-print(f'Score = {score:,}')
+print(f'States found ({t1 - t0:.3f} s):\n{matrix.get_states()}\n')
+print(f'Score = {matrix.get_score():,}')
