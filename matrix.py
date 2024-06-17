@@ -1,19 +1,20 @@
 import math
 import functools
 import operator
-import time
 import StatesPopulation
 
 
-class matrix:
+class Matrix:
 
-    def __init__(self, str: str) -> None:
-        if not self.__is_valid_input(str):
-            raise ValueError(f'Can not make matrix, string length not perfect square: {len(str)}')
+    def __init__(self, input: str, states_population=None, alturations=1) -> None:
+        if not self.__is_valid_input(input):
+            raise ValueError(f'Can not make matrix, string length not perfect square: {len(input)}')
 
-        self.input = str
-        self.states_population = StatesPopulation.state_populations
-        self.solution = None
+        self.input = input
+        self.states_population = StatesPopulation.state_populations if states_population == None else states_population
+        self.alturations = alturations
+        self.solution: list[str] = None
+        self.cell_contributions: list[int] = None
 
     def __is_valid_input(self, str):
         return math.floor(math.sqrt(len(str))) == math.ceil(math.sqrt(len(str)))
@@ -24,46 +25,52 @@ class matrix:
     def get_states(self):
         return self.solution
     
+    def get_cell_contributions(self):
+        return self.cell_contributions
+    
     def get_string(self):
         return self.input
     
-    def find_all_present_states(self, alturations=1):
+    def find_all_present_states(self):
         self.solution = []
-        for state in self.__get_possible_states(alturations):
-            if self.__is_state_present(self.input, state, alturations):
+        self.cell_contributions = [0] * len(self.input)
+        for state in self.__get_possible_states():
+            if self.__is_state_present(state):
                 self.solution.append(state)
     
-    def __get_possible_states(self, alturations):
+    def __get_possible_states(self):
         possible_states = []
         input_chars= set(self.input)
         for state in self.states_population.keys():
             state_chars = set(state)
             diff = state_chars.union(input_chars)
-            if len(diff) >= len(state) - alturations:
+            if len(diff) >= len(state) - self.alturations:
                 possible_states.append(state)
         return possible_states
     
-    def __is_state_present(self, input: str, state: str, alterings: int) -> bool:
+    def __is_state_present(self, state):
         result = False
-        for i in range(0, len(input)):
-            result = result or self.__is_state_present_helper(input, state, i, alterings)
+        for i in range(len(self.input)):
+            result = self._is_state_present_helper(state, i, self.alturations) or result
         return result
     
-    def __is_state_present_helper(self, input: str, state: str, cur_pos: int, alterings: int) -> bool:
-        
-        if not state or input[cur_pos] == state:
+    def _is_state_present_helper(self, state: str, cur_cell: int, alterings) -> bool:
+
+        if self.input[cur_cell] == state or (len(state) == 1 and alterings == 1):
+            self.cell_contributions[cur_cell] = self.cell_contributions[cur_cell] + 1
             return True
-        elif input[cur_pos] != state[0] and alterings == 0:
+        elif self.input[cur_cell] != state[0] and alterings == 0:
             return False
-        elif input[cur_pos] != state[0] and alterings > 0:
+        elif self.input[cur_cell] != state[0] and alterings > 0:
             alterings = alterings - 1
-        
-        
+
         state = state[1:]
-        for i in self.__get_neighbourin_cell_indices(cur_pos, len(input)):
-            if (self.__is_state_present_helper(input, state, i, alterings)):
-                return True
-        return False
+        result = False
+        for i in self.__get_neighbourin_cell_indices(cur_cell, len(self.input)):
+            if self._is_state_present_helper(state, i, alterings):
+                result = True
+                self.cell_contributions[cur_cell] = self.cell_contributions[cur_cell] + 1
+        return result
 
     def __get_neighbourin_cell_indices(self, idx, str_len):
         mtrx_dim = int(str_len ** 0.5)
